@@ -1,7 +1,8 @@
-import { Search, ShoppingCart, User, Bell, Globe } from "lucide-react";
+import { Search, ShoppingCart, User, Bell, Globe, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 export const Header = () => {
   const navItems = [
@@ -19,14 +20,14 @@ export const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2">
           <div className="flex items-center space-x-1">
             <div className="w-8 h-8 bg-gaming-red rounded-sm flex items-center justify-center">
               <span className="text-white font-bold text-lg">M</span>
             </div>
             <span className="text-xl font-bold text-gaming-red">MIGA</span>
           </div>
-        </div>
+        </Link>
 
         {/* Search Bar */}
         <div className="flex-1 max-w-md mx-8">
@@ -47,6 +48,14 @@ export const Header = () => {
             <Globe className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm">$</span>
           </div>
+
+          {/* Dashboard Link */}
+          <Button variant="gaming-outline" size="sm" asChild>
+            <Link to="/dashboard">
+              <Settings className="w-4 h-4 mr-2" />
+              Dashboard
+            </Link>
+          </Button>
 
           {/* Notifications */}
           <Button variant="ghost" size="icon">
