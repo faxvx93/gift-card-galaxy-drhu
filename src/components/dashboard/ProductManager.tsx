@@ -61,7 +61,7 @@ export const ProductManager = () => {
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.category_name && product.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const stats = [
@@ -72,8 +72,8 @@ export const ProductManager = () => {
       color: "text-gaming-red"
     },
     {
-      title: "Active Products",
-      value: products.filter(p => p.status === 'active').length.toString(),
+      title: "Available Products",
+      value: products.filter(p => p.available).length.toString(),
       icon: Package,
       color: "text-gaming-cyan"
     },
@@ -84,8 +84,8 @@ export const ProductManager = () => {
       color: "text-gaming-purple"
     },
     {
-      title: "In Stock",
-      value: products.filter(p => p.stock > 0).length.toString(),
+      title: "Product Types",
+      value: [...new Set(products.map(p => p.product_type))].length.toString(),
       icon: Star,
       color: "text-gaming-blue"
     }
@@ -179,7 +179,7 @@ export const ProductManager = () => {
                 <TableHead>Product</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Quantity Range</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -216,24 +216,29 @@ export const ProductManager = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
+                      <Badge variant="outline">{product.category_name || 'Uncategorized'}</Badge>
                     </TableCell>
                     <TableCell className="font-medium text-gaming-red">
-                      ${product.price.toFixed(2)}
+                      ${product.price.toFixed(4)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                        {product.stock}
+                      <Badge variant="outline">
+                        {product.product_type}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {product.min_quantity} - {product.max_quantity}
+                        {product.qty_values 
+                          ? (Array.isArray(product.qty_values) 
+                              ? `${product.qty_values.length} options` 
+                              : `${product.qty_values.min} - ${product.qty_values.max}`)
+                          : 'N/A'
+                        }
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={product.status === "active" ? "default" : "secondary"}>
-                        {product.status}
+                      <Badge variant={product.available ? "default" : "secondary"}>
+                        {product.available ? 'Available' : 'Unavailable'}
                       </Badge>
                     </TableCell>
                     <TableCell>

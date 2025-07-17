@@ -19,13 +19,13 @@ export const DhruApiSettings = () => {
   useEffect(() => {
     // Load saved credentials from localStorage
     const savedUrl = localStorage.getItem('dhru_base_url');
-    const savedKey = localStorage.getItem('dhru_api_key');
+    const savedToken = localStorage.getItem('dhru_api_token');
     
-    if (savedUrl && savedKey) {
+    if (savedUrl && savedToken) {
       setBaseUrl(savedUrl);
-      setApiKey(savedKey);
-      dhruApi.setCredentials(savedUrl, savedKey);
-      testConnection(savedUrl, savedKey);
+      setApiKey(savedToken);
+      dhruApi.setCredentials(savedUrl, savedToken);
+      testConnection(savedUrl, savedToken);
     }
   }, []);
 
@@ -38,14 +38,14 @@ export const DhruApiSettings = () => {
       setIsConnected(true);
       toast({
         title: "Success",
-        description: "Connected to Dhru API successfully",
+        description: "Connected to ZDDK API successfully",
       });
     } catch (error) {
       setIsConnected(false);
       setBalance(null);
       toast({
         title: "Connection Failed",
-        description: "Failed to connect to Dhru API. Please check your credentials.",
+        description: "Failed to connect to ZDDK API. Please check your credentials.",
         variant: "destructive",
       });
     } finally {
@@ -64,7 +64,7 @@ export const DhruApiSettings = () => {
     }
 
     localStorage.setItem('dhru_base_url', baseUrl);
-    localStorage.setItem('dhru_api_key', apiKey);
+    localStorage.setItem('dhru_api_token', apiKey);
     
     testConnection();
   };
@@ -74,10 +74,10 @@ export const DhruApiSettings = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="w-5 h-5" />
-          Dhru API Configuration
+          ZDDK API Configuration
         </CardTitle>
         <CardDescription>
-          Configure your Dhru API credentials to sync products
+          Configure your ZDDK API credentials to sync products
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -87,18 +87,18 @@ export const DhruApiSettings = () => {
             <Input
               id="baseUrl"
               type="url"
-              placeholder="https://panel.dhru.com/api"
+              placeholder="https://api.x-stor.net"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="apiKey">API Key</Label>
+            <Label htmlFor="apiKey">API Token</Label>
             <Input
               id="apiKey"
               type="password"
-              placeholder="Your Dhru API key"
+              placeholder="Your API token"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
