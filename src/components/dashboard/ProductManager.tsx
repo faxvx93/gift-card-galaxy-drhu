@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { dhruApi, DhruProduct } from "@/services/dhruApi";
+import { DhruApiSettings } from "./DhruApiSettings";
 import { 
-  Plus, 
   Search, 
   Edit, 
   Trash2, 
   Eye,
   Package,
   DollarSign,
-  Star
+  Star,
+  RefreshCw,
+  Settings
 } from "lucide-react";
 import {
   Table,
@@ -24,87 +28,64 @@ import {
 
 export const ProductManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [products, setProducts] = useState<DhruProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const { toast } = useToast();
 
-  const products = [
-    {
-      id: 1,
-      name: "PUBG Mobile 60 UC",
-      category: "PUBG Mobile",
-      price: "$0.99",
-      stock: 999,
-      sales: 234,
-      rating: 4.8,
-      status: "active",
-      image: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=100&h=100&fit=crop"
-    },
-    {
-      id: 2,
-      name: "PUBG Mobile 325 UC",
-      category: "PUBG Mobile",
-      price: "$4.99",
-      stock: 999,
-      sales: 187,
-      rating: 4.9,
-      status: "active",
-      image: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=100&h=100&fit=crop"
-    },
-    {
-      id: 3,
-      name: "Free Fire 100 Diamonds",
-      category: "Free Fire",
-      price: "$1.99",
-      stock: 500,
-      sales: 145,
-      rating: 4.7,
-      status: "active",
-      image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=100&h=100&fit=crop"
-    },
-    {
-      id: 4,
-      name: "Discord Nitro 1 Month",
-      category: "Chat Apps",
-      price: "$9.99",
-      stock: 200,
-      sales: 98,
-      rating: 4.6,
-      status: "active",
-      image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=100&h=100&fit=crop"
-    },
-    {
-      id: 5,
-      name: "Starlink Basic Package",
-      category: "Starlink",
-      price: "$99.99",
-      stock: 50,
-      sales: 23,
-      rating: 4.5,
-      status: "inactive",
-      image: "https://images.unsplash.com/photo-1446776877081-d282a0f896e2?w=100&h=100&fit=crop"
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    setIsLoading(true);
+    try {
+      const dhruProducts = await dhruApi.getProducts();
+      setProducts(dhruProducts);
+      toast({
+        title: "Success",
+        description: `Loaded ${dhruProducts.length} products from Dhru API`,
+      });
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products. Please check your API configuration.",
+        variant: "destructive",
+      });
+      setShowSettings(true);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const stats = [
     {
       title: "Total Products",
-      value: "89",
+      value: products.length.toString(),
       icon: Package,
       color: "text-gaming-red"
     },
     {
       title: "Active Products",
-      value: "76",
+      value: products.filter(p => p.status === 'active').length.toString(),
       icon: Package,
       color: "text-gaming-cyan"
     },
     {
       title: "Avg Price",
-      value: "$23.45",
+      value: products.length > 0 ? `$${(products.reduce((sum, p) => sum + p.price, 0) / products.length).toFixed(2)}` : "$0.00",
       icon: DollarSign,
       color: "text-gaming-purple"
     },
     {
-      title: "Avg Rating",
-      value: "4.7",
+      title: "In Stock",
+      value: products.filter(p => p.stock > 0).length.toString(),
       icon: Star,
       color: "text-gaming-blue"
     }
@@ -118,10 +99,25 @@ export const ProductManager = () => {
           <h1 className="text-3xl font-bold">Product Management</h1>
           <p className="text-muted-foreground">Manage your gaming products and services</p>
         </div>
-        <Button variant="gaming" className="gap-2">
-          <Plus className="w-4 h-4" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSettings(!showSettings)}
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            API Settings
+          </Button>
+          <Button 
+            variant="gaming" 
+            onClick={loadProducts} 
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Sync Products
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -144,6 +140,9 @@ export const ProductManager = () => {
         })}
       </div>
 
+      {/* API Settings */}
+      {showSettings && <DhruApiSettings />}
+
       {/* Search and Filters */}
       <Card className="gaming-card">
         <CardHeader>
@@ -162,7 +161,7 @@ export const ProductManager = () => {
             </div>
             <Button variant="outline">All Categories</Button>
             <Button variant="outline">All Status</Button>
-            <Button variant="outline">Sort by Sales</Button>
+            <Button variant="outline">Sort by Price</Button>
           </div>
         </CardContent>
       </Card>
@@ -171,7 +170,7 @@ export const ProductManager = () => {
       <Card className="gaming-card">
         <CardHeader>
           <CardTitle>Products</CardTitle>
-          <CardDescription>Manage all your gaming products</CardDescription>
+          <CardDescription>Manage all your gaming products from Dhru API</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -181,64 +180,78 @@ export const ProductManager = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Sales</TableHead>
-                <TableHead>Rating</TableHead>
+                <TableHead>Quantity Range</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-10 h-10 rounded-lg object-cover"
-                      />
-                      <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-muted-foreground">ID: #{product.id}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{product.category}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium text-gaming-red">{product.price}</TableCell>
-                  <TableCell>
-                    <Badge variant={product.stock > 100 ? "default" : "destructive"}>
-                      {product.stock}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{product.sales}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                      {product.rating}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={product.status === "active" ? "default" : "secondary"}>
-                      {product.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Eye className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Loading products from Dhru API...
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    No products found. {products.length === 0 ? 'Configure API settings to sync products.' : 'Try adjusting your search.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                          <Package className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">ID: #{product.id}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{product.category}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium text-gaming-red">
+                      ${product.price.toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={product.stock > 0 ? "default" : "destructive"}>
+                        {product.stock}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {product.min_quantity} - {product.max_quantity}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={product.status === "active" ? "default" : "secondary"}>
+                        {product.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
